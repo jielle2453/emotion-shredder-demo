@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import svgPaths from "./svg-sbn47rlj4l";
 import { FLOWERS, FlowerArtwork, clampFlowerIndex } from "../../utils/flowers";
-import { dailyFinalEmotionRecords, getEmotionRecords, recordsInMonth, revealedEmotionRecords } from "../../utils/records";
+import { dailyFinalEmotionRecords, getEmotionRecords, revealedEmotionRecords } from "../../utils/records";
 
 function Group5() {
   return (
@@ -496,39 +496,34 @@ function GardenFlower({
 }
 
 export default function Component() {
-  const [gardenMonth] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() + 1 };
-  });
-  const [monthlyFlowerIndexes, setMonthlyFlowerIndexes] = useState<number[]>([]);
-  const gardenLayout = useMemo(() => getGardenLayout(monthlyFlowerIndexes), [monthlyFlowerIndexes]);
+  const [allFlowerIndexes, setAllFlowerIndexes] = useState<number[]>([]);
+  const gardenLayout = useMemo(() => getGardenLayout(allFlowerIndexes), [allFlowerIndexes]);
 
   useEffect(() => {
     let active = true;
 
     getEmotionRecords()
       .then((records) => {
-        const monthlyRecords = recordsInMonth(dailyFinalEmotionRecords(revealedEmotionRecords(records)), gardenMonth.year, gardenMonth.month);
-        const flowerIndexes = monthlyRecords
+        const flowerIndexes = dailyFinalEmotionRecords(revealedEmotionRecords(records))
           .slice()
           .reverse()
           .map((record) => clampFlowerIndex(record.flowerIndex))
           .filter((index) => index >= 0 && index < FLOWERS.length);
-        if (active) setMonthlyFlowerIndexes(flowerIndexes);
+        if (active) setAllFlowerIndexes(flowerIndexes);
       })
       .catch((err) => {
-        console.warn("Failed to load monthly garden flowers:", err);
+        console.warn("Failed to load garden flowers:", err);
       });
 
     return () => {
       active = false;
     };
-  }, [gardenMonth.month, gardenMonth.year]);
+  }, []);
 
   return (
     <div className="bg-white overflow-clip relative rounded-[40px] size-full" data-name="花圃">
       <div className="absolute bg-[#dfd4ca] left-0 top-[798px] h-[76px] w-[402px]" />
-      <Soil count={monthlyFlowerIndexes.length} />
+      <Soil count={allFlowerIndexes.length} />
       {gardenLayout.map((item) => (
         <GardenFlower
           key={item.id}
