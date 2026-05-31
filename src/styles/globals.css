@@ -50,6 +50,7 @@ body {
 }
 
 .demo-page--fullscreen {
+  background: white;
   padding: 0;
 }
 

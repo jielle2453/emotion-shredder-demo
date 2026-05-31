@@ -114,16 +114,17 @@ export default function App() {
         (isTouchViewport && width < 1024 && aspectRatio < 0.8);
 
       if (isFullscreenViewport) {
-        const scale = Math.max(width / DEMO_PHONE_WIDTH, height / DEMO_PHONE_HEIGHT);
-        const scaledWidth = DEMO_PHONE_WIDTH * scale;
-        const scaledHeight = DEMO_PHONE_HEIGHT * scale;
+        const scale = Math.min(width / DEMO_PHONE_WIDTH, height / DEMO_PHONE_HEIGHT);
+        const fittedScale = Math.floor(scale * 10000) / 10000;
+        const scaledWidth = DEMO_PHONE_WIDTH * fittedScale;
+        const scaledHeight = DEMO_PHONE_HEIGHT * fittedScale;
 
         setDemoFrame({
           height,
           isFullscreen: true,
           offsetX: (width - scaledWidth) / 2,
           offsetY: (height - scaledHeight) / 2,
-          scale: Number(scale.toFixed(4)),
+          scale: fittedScale,
           width,
         });
         return;
