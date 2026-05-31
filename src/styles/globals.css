@@ -63,7 +63,12 @@ body {
   }
 
   .demo-phone-device {
+    border-radius: 0;
     box-shadow: none;
+  }
+
+  .demo-phone-device > * {
+    border-radius: 0 !important;
   }
 }
 

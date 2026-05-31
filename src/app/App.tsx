@@ -33,6 +33,14 @@ const TABS: View[] = ["garden", "calendar", "home", "collection", "settings"];
 const DEMO_PHONE_WIDTH = 402;
 const DEMO_PHONE_HEIGHT = 874;
 
+type DemoFrame = {
+  height: number;
+  offsetX: number;
+  offsetY: number;
+  scale: number;
+  width: number;
+};
+
 const FALLBACK_ANALYSIS_ZH = {
   keyword: "釋放",
   keywords: ["釋放"],
@@ -63,7 +71,13 @@ export default function App() {
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
   const hasStartedBackgroundAudioRef = useRef(false);
   const lastSproutNotificationRef = useRef("");
-  const [demoScale, setDemoScale] = useState(1);
+  const [demoFrame, setDemoFrame] = useState<DemoFrame>({
+    height: DEMO_PHONE_HEIGHT,
+    offsetX: 0,
+    offsetY: 0,
+    scale: 1,
+    width: DEMO_PHONE_WIDTH,
+  });
   const [view, setView] = useState<View>("home");
   const [history, setHistory] = useState<View[]>([]);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -77,35 +91,57 @@ export default function App() {
   const [language, setLanguage] = useState<AppLanguage>("zh");
 
   useEffect(() => {
-    const updateDemoScale = () => {
+    const updateDemoFrame = () => {
       const viewport = window.visualViewport;
       const width = viewport?.width ?? window.innerWidth;
       const height = viewport?.height ?? window.innerHeight;
       const isSmallViewport = width < 720;
-      const margin = isSmallViewport ? 0 : 32;
-      const nextScale = Math.min(
-        isSmallViewport ? 1 : 1.04,
+
+      if (isSmallViewport) {
+        const scale = Math.max(width / DEMO_PHONE_WIDTH, height / DEMO_PHONE_HEIGHT);
+        const scaledWidth = DEMO_PHONE_WIDTH * scale;
+        const scaledHeight = DEMO_PHONE_HEIGHT * scale;
+
+        setDemoFrame({
+          height,
+          offsetX: (width - scaledWidth) / 2,
+          offsetY: (height - scaledHeight) / 2,
+          scale: Number(scale.toFixed(4)),
+          width,
+        });
+        return;
+      }
+
+      const margin = 32;
+      const scale = Math.min(
+        1.04,
         Math.max(
           0.48,
           Math.min(
-            (width - margin * 2) / DEMO_PHONE_WIDTH,
-            (height - margin * 2) / DEMO_PHONE_HEIGHT,
+            Math.max(1, width - margin * 2) / DEMO_PHONE_WIDTH,
+            Math.max(1, height - margin * 2) / DEMO_PHONE_HEIGHT,
           ),
         ),
       );
 
-      setDemoScale(Number(nextScale.toFixed(4)));
+      setDemoFrame({
+        height: DEMO_PHONE_HEIGHT * scale,
+        offsetX: 0,
+        offsetY: 0,
+        scale: Number(scale.toFixed(4)),
+        width: DEMO_PHONE_WIDTH * scale,
+      });
     };
 
-    updateDemoScale();
-    window.addEventListener("resize", updateDemoScale);
-    window.visualViewport?.addEventListener("resize", updateDemoScale);
-    window.visualViewport?.addEventListener("scroll", updateDemoScale);
+    updateDemoFrame();
+    window.addEventListener("resize", updateDemoFrame);
+    window.visualViewport?.addEventListener("resize", updateDemoFrame);
+    window.visualViewport?.addEventListener("scroll", updateDemoFrame);
 
     return () => {
-      window.removeEventListener("resize", updateDemoScale);
-      window.visualViewport?.removeEventListener("resize", updateDemoScale);
-      window.visualViewport?.removeEventListener("scroll", updateDemoScale);
+      window.removeEventListener("resize", updateDemoFrame);
+      window.visualViewport?.removeEventListener("resize", updateDemoFrame);
+      window.visualViewport?.removeEventListener("scroll", updateDemoFrame);
     };
   }, []);
 
@@ -361,16 +397,18 @@ export default function App() {
       <div
         className="demo-phone-shell"
         style={{
-          width: DEMO_PHONE_WIDTH * demoScale,
-          height: DEMO_PHONE_HEIGHT * demoScale,
+          width: demoFrame.width,
+          height: demoFrame.height,
         }}
       >
         <div
           className="demo-phone-device"
           style={{
+            left: demoFrame.offsetX,
+            top: demoFrame.offsetY,
             width: DEMO_PHONE_WIDTH,
             height: DEMO_PHONE_HEIGHT,
-            transform: `scale(${demoScale})`,
+            transform: `scale(${demoFrame.scale})`,
           }}
         >
         {isAuthLoading && (
