@@ -36,6 +36,10 @@ const AUTH_COPY = {
   },
 } satisfies Record<AppLanguage, Record<string, string>>;
 
+function getAuthRedirectUrl() {
+  return new URL(import.meta.env.BASE_URL || "/", window.location.origin).toString();
+}
+
 function AuthFlowerStrip() {
   return <SwappingFlowerStrip className="absolute bottom-[104px] left-1/2 h-[84px] w-[342px] -translate-x-1/2" />;
 }
@@ -63,7 +67,13 @@ export default function AuthScreen({ language = "zh", onGuest }: { language?: Ap
     setMessage("");
 
     const result = isSignup
-      ? await supabase.auth.signUp({ email: normalizedEmail, password })
+      ? await supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: {
+            emailRedirectTo: getAuthRedirectUrl(),
+          },
+        })
       : await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
 
     setIsLoading(false);
@@ -85,7 +95,7 @@ export default function AuthScreen({ language = "zh", onGuest }: { language?: Ap
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: getAuthRedirectUrl(),
       },
     });
 
