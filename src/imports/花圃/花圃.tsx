@@ -145,58 +145,22 @@ function Setting() {
 const APP_WIDTH = 402;
 const NAV_TOP = 798;
 const NAV_COLOR = "#dfd4ca";
-const MARIGOLD_FLOWER_INDEX = 2;
-const TULIP_FLOWER_INDEX = 10;
-const CURRENT_PREVIEW_LAYOUT_SIGNATURE = "7,2,1,10,10,5,1";
-const TODAY_PREVIEW_LAYOUT_SIGNATURE = "7,2,1,10,10,5,1,2";
-
-function getOneOffLayoutNudge(flowerIndexes: number[], flowerCursor: number, flowerIndex: number) {
-  const signature = flowerIndexes.join(",");
-
-  if (signature === CURRENT_PREVIEW_LAYOUT_SIGNATURE && flowerCursor === 1 && flowerIndex === MARIGOLD_FLOWER_INDEX) {
-    return { x: -58, y: 0, rotate: 0, swayAngle: 0 };
-  }
-
-  if (signature === TODAY_PREVIEW_LAYOUT_SIGNATURE) {
-    const nonSunflowerLift = flowerCursor === 0 ? 0 : -50;
-
-    if (flowerCursor === 0 && flowerIndex === 7) {
-      return { x: -18, y: 54 };
-    }
-
-    if (flowerCursor === 6 && flowerIndex === 1) {
-      return { x: -48, y: -8 + nonSunflowerLift };
-    }
-
-    if (flowerCursor === 7 && flowerIndex === MARIGOLD_FLOWER_INDEX) {
-      return { x: 16, y: 6 + nonSunflowerLift };
-    }
-
-    if (flowerIndex === TULIP_FLOWER_INDEX) {
-      return { x: 0, y: nonSunflowerLift - 32 };
-    }
-
-    return { x: 0, y: nonSunflowerLift };
-  }
-
-  return { x: 0, y: 0 };
-}
 
 function getSoilHeight(count: number) {
   if (count <= 0) return 170;
   if (count <= 3) return 210;
-  if (count <= 7) return 300;
-  if (count <= 12) return 380;
-  if (count <= 18) return 500;
-  return 555;
+  if (count <= 7) return 280;
+  if (count <= 12) return 340;
+  if (count <= 18) return 455;
+  return 520;
 }
 
 function getFlowerHeight(count: number) {
   if (count <= 1) return 285;
   if (count <= 3) return 255;
-  if (count <= 7) return 205;
-  if (count <= 12) return 168;
-  if (count <= 18) return 140;
+  if (count <= 7) return 195;
+  if (count <= 12) return 158;
+  if (count <= 18) return 132;
   return 122;
 }
 
@@ -211,6 +175,30 @@ function getRowCount(count: number) {
 
 function buildTriangleRows(count: number) {
   if (count <= 0) return [];
+  if (count <= 2) return [count];
+
+  const rowPresets: Record<number, number[]> = {
+    3: [1, 2],
+    4: [2, 2],
+    5: [2, 3],
+    6: [2, 2, 2],
+    7: [2, 2, 3],
+    8: [2, 3, 3],
+    9: [2, 3, 4],
+    10: [2, 3, 2, 3],
+    11: [2, 3, 3, 3],
+    12: [2, 3, 3, 4],
+    13: [2, 3, 4, 4],
+    14: [2, 3, 4, 5],
+    15: [2, 3, 3, 3, 4],
+    16: [2, 3, 3, 4, 4],
+    17: [2, 3, 4, 4, 4],
+    18: [2, 3, 4, 4, 5],
+    19: [2, 3, 4, 5, 5],
+    20: [2, 3, 4, 5, 6],
+  };
+
+  if (rowPresets[count]) return rowPresets[count];
 
   const rowCount = getRowCount(count);
   const weights = Array.from({ length: rowCount }, (_, index) => index + 1);
@@ -268,6 +256,67 @@ const DUPLICATE_FLOWER_PATTERN = [
   { x: 0.75, y: 0.5, rotate: 7, scale: 1 },
 ];
 
+type GardenLayoutItem = {
+  id: string;
+  flowerIndex: number;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  rotate: number;
+  swayAngle?: number;
+  flip: number;
+  zIndex: number;
+};
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getFlowerHeadBounds(item: GardenLayoutItem) {
+  const width = item.width * 0.66;
+  const height = item.height * 0.42;
+
+  return {
+    centerX: item.left + item.width / 2,
+    centerY: item.top + item.height * 0.25,
+    height,
+    width,
+  };
+}
+
+function softenFlowerOverlaps(items: GardenLayoutItem[]) {
+  const adjusted = items.map((item) => ({ ...item }));
+
+  for (let pass = 0; pass < 2; pass += 1) {
+    for (let index = 1; index < adjusted.length; index += 1) {
+      const current = adjusted[index];
+
+      for (let previousIndex = 0; previousIndex < index; previousIndex += 1) {
+        const previous = adjusted[previousIndex];
+        const currentHead = getFlowerHeadBounds(current);
+        const previousHead = getFlowerHeadBounds(previous);
+        const overlapX = (currentHead.width + previousHead.width) / 2 - Math.abs(currentHead.centerX - previousHead.centerX);
+        const overlapY = (currentHead.height + previousHead.height) / 2 - Math.abs(currentHead.centerY - previousHead.centerY);
+
+        if (overlapX <= 0 || overlapY <= 0) continue;
+
+        const direction = currentHead.centerX >= previousHead.centerX ? 1 : -1;
+        const shiftX = Math.min(18, overlapX * 0.42 + 4) * direction;
+        const shiftY = Math.min(12, overlapY * 0.22);
+
+        current.left = clamp(current.left + shiftX, 10, APP_WIDTH - current.width - 10);
+        current.top += currentHead.centerY >= previousHead.centerY ? shiftY : -shiftY * 0.35;
+      }
+    }
+  }
+
+  return adjusted.map((item) => ({
+    ...item,
+    zIndex: Math.round(item.top + item.height),
+  }));
+}
+
 function getGardenLayout(flowerIndexes: number[]) {
   const count = flowerIndexes.length;
   const soilHeight = getSoilHeight(count);
@@ -275,8 +324,8 @@ function getGardenLayout(flowerIndexes: number[]) {
   const flowerHeight = getFlowerHeight(count);
   const flowerWidth = Math.round(flowerHeight * 0.7);
   const rows = buildTriangleRows(count);
-  const topBaseY = soilTop + (count <= 3 ? 118 : count <= 12 ? 62 : count <= 18 ? 76 : 94);
-  const bottomBaseY = NAV_TOP - (count <= 3 ? 72 : count <= 12 ? 84 : 92);
+  const topBaseY = soilTop + (count <= 3 ? 118 : count <= 12 ? 66 : count <= 18 ? 80 : 96);
+  const bottomBaseY = NAV_TOP - (count <= 3 ? 72 : count <= 12 ? 90 : 96);
   const rowGap = rows.length > 1 ? (bottomBaseY - topBaseY) / (rows.length - 1) : 0;
   let flowerCursor = 0;
   const duplicateSeen = new Map<number, number>();
@@ -285,14 +334,14 @@ function getGardenLayout(flowerIndexes: number[]) {
     return totals;
   }, new Map<number, number>());
 
-  return rows.flatMap((rowSize, rowIndex) => {
+  const layout = rows.flatMap<GardenLayoutItem>((rowSize, rowIndex) => {
     const rowProgress = rows.length === 1 ? 1 : rowIndex / (rows.length - 1);
     const baseY = rows.length === 1 ? bottomBaseY : topBaseY + rowIndex * rowGap;
     const depthScale = count <= 3
       ? 1
-      : 0.97 + rowProgress * 0.06;
-    const spacing = Math.min(92, Math.max(52, flowerWidth * (count <= 3 ? 0.78 : 0.6)));
-    const rowJitter = signed(rowIndex + count * 0.31) * (count <= 7 ? 10 : 12);
+      : 0.96 + rowProgress * 0.05;
+    const spacing = Math.min(82, Math.max(50, flowerWidth * (count <= 3 ? 0.74 : 0.56)));
+    const rowJitter = signed(rowIndex + count * 0.31) * (count <= 7 ? 8 : 7);
 
     return Array.from({ length: rowSize }, (_, itemIndex) => {
       const flowerIndex = flowerIndexes[flowerCursor];
@@ -302,27 +351,26 @@ function getGardenLayout(flowerIndexes: number[]) {
       const duplicatePattern = duplicateTotal > 1
         ? DUPLICATE_FLOWER_PATTERN[duplicateOrder % DUPLICATE_FLOWER_PATTERN.length]
         : { x: 0, y: 0, rotate: 0, scale: 1 };
-      const duplicateSpreadX = count <= 7 ? 78 : count <= 12 ? 66 : 54;
-      const duplicateSpreadY = count <= 7 ? 58 : count <= 12 ? 48 : 38;
+      const duplicateSpreadX = count <= 7 ? 46 : count <= 12 ? 34 : 30;
+      const duplicateSpreadY = count <= 7 ? 34 : count <= 12 ? 26 : 24;
       const normalized = rowSize === 1 ? 0 : itemIndex / (rowSize - 1) - 0.5;
       const edgeWeight = rowSize === 1 ? 0 : Math.abs(normalized) * 2;
       const individuality = signed(flowerCursor + flowerIndex * 1.7) * 0.035;
-      const sizeBoost = rowIndex === 0 && rowSize === 1 ? 0.12 : 0;
+      const sizeBoost = rowIndex === 0 && rowSize === 1 ? 0.08 : 0;
       const itemHeight = Math.round(flowerHeight * Math.max(0.76, depthScale + individuality + sizeBoost) * duplicatePattern.scale);
       const itemWidth = Math.round(flowerWidth * Math.max(0.76, depthScale + individuality + sizeBoost) * duplicatePattern.scale);
-      const maxRowSpan = count <= 3 ? 210 : count <= 12 ? 292 : 282;
+      const maxRowSpan = count <= 3 ? 196 : count <= 12 ? 238 : 266;
       const rowSpan = rowSize > 1 ? Math.min(spacing * (rowSize - 1), maxRowSpan) : 0;
       const duplicateX = duplicatePattern.x * duplicateSpreadX;
       const duplicateY = duplicatePattern.y * duplicateSpreadY;
-      const oneOffNudge = getOneOffLayoutNudge(flowerIndexes, flowerCursor, flowerIndex);
-      const centerX = APP_WIDTH / 2 + normalized * rowSpan + rowJitter + signed(flowerCursor + 2.4) * (count <= 7 ? 12 : 8) + duplicateX + oneOffNudge.x;
-      const arcDrop = edgeWeight * edgeWeight * (count <= 3 ? 16 : count <= 12 ? 14 : 18);
-      const lift = signed(flowerCursor + rowIndex * 2.13) * (count <= 3 ? 12 : 10);
+      const centerX = APP_WIDTH / 2 + normalized * rowSpan + rowJitter + signed(flowerCursor + 2.4) * (count <= 7 ? 9 : 6) + duplicateX;
+      const arcDrop = edgeWeight * edgeWeight * (count <= 3 ? 14 : count <= 12 ? 10 : 14);
+      const lift = signed(flowerCursor + rowIndex * 2.13) * (count <= 3 ? 10 : 8);
       const baseRotate = [-10, 7, -5, 8, -6, 4][flowerCursor % 6] + signed(flowerCursor + 4.9) * 2.5 + duplicatePattern.rotate;
-      const rotate = oneOffNudge.rotate ?? baseRotate;
+      const rotate = baseRotate;
       const flip = pseudo(flowerCursor + flowerIndex * 0.77) > 0.58 ? -1 : 1;
-      const top = baseY - itemHeight + arcDrop + lift + duplicateY + oneOffNudge.y;
-      const left = Math.max(4, Math.min(APP_WIDTH - itemWidth - 4, centerX - itemWidth / 2));
+      const top = baseY - itemHeight + arcDrop + lift + duplicateY;
+      const left = clamp(centerX - itemWidth / 2, 10, APP_WIDTH - itemWidth - 10);
       const zIndex = Math.round(top + itemHeight);
       const id = `${flowerIndex}-${flowerCursor}`;
       flowerCursor += 1;
@@ -335,12 +383,13 @@ function getGardenLayout(flowerIndexes: number[]) {
         width: itemWidth,
         height: itemHeight,
         rotate,
-        swayAngle: oneOffNudge.swayAngle,
         flip,
         zIndex,
       };
     });
   });
+
+  return softenFlowerOverlaps(layout);
 }
 
 function Soil({ count }: { count: number }) {
