@@ -44,6 +44,24 @@
 
   The workflow builds with the correct Vite base path automatically. Normal project pages use `/<repo-name>/`; `username.github.io` repositories use `/`.
 
+  ## Add to Home Screen
+
+  This demo includes a PWA manifest, app icons, iOS home-screen metadata, and a service worker. After deployment, visitors can open the GitHub Pages URL and add it to their phone's home screen.
+
+  iPhone:
+
+  1. Open the demo URL in Safari.
+  2. Tap Share.
+  3. Tap Add to Home Screen.
+  4. Open the app from the new home-screen icon.
+
+  Android Chrome:
+
+  1. Open the demo URL in Chrome.
+  2. Tap the menu.
+  3. Tap Add to Home screen or Install app.
+  4. Open the app from the new home-screen icon.
+
   ## Backend setup
 
   Use `.env.example` as the template for `.env.local`, then replace `VITE_SUPABASE_PUBLISHABLE_KEY` with the current Supabase publishable or anon key.
