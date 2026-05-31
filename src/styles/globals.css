@@ -1,0 +1,104 @@
+/* App-wide custom styles live here. */
+
+html,
+body {
+  background: #efeae4;
+}
+
+body {
+  overflow: hidden;
+}
+
+.demo-page {
+  align-items: center;
+  background: #efeae4;
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding: 16px;
+  width: 100%;
+}
+
+.demo-phone-shell {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.demo-phone-shell::before {
+  background: #f8f5f0;
+  border: 1px solid rgba(118, 103, 88, 0.12);
+  border-radius: 48px;
+  box-shadow:
+    0 22px 54px rgba(63, 50, 39, 0.18),
+    0 7px 18px rgba(63, 50, 39, 0.08);
+  content: "";
+  inset: -8px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.demo-phone-device {
+  background: white;
+  border-radius: 40px;
+  box-shadow: 0 12px 34px rgba(63, 50, 39, 0.12);
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  transform-origin: top left;
+}
+
+@media (max-width: 719px) {
+  body {
+    overflow: hidden;
+  }
+
+  .demo-page {
+    padding: 0;
+  }
+
+  .demo-phone-shell::before {
+    display: none;
+  }
+
+  .demo-phone-device {
+    box-shadow: none;
+  }
+}
+
+@keyframes flower-strip-stem-sway {
+  0%,
+  100% {
+    transform: translateX(calc(var(--sway-distance, 1.5px) * -1)) rotate(calc(var(--sway-angle, 1deg) * -1));
+  }
+
+  50% {
+    transform: translateX(var(--sway-distance, 1.5px)) rotate(var(--sway-angle, 1deg));
+  }
+}
+
+.flower-strip-stem {
+  animation: flower-strip-stem-sway var(--sway-duration, 3.4s) ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
+  transform-origin: var(--sway-origin, 50% 100%);
+  will-change: transform;
+}
+
+@keyframes garden-flower-sway {
+  0%,
+  100% {
+    transform: translateX(calc(var(--garden-sway-distance, 2px) * -1)) rotate(calc(var(--garden-rotate, 0deg) - var(--garden-sway-angle, 1deg))) scaleX(var(--garden-flip, 1));
+  }
+
+  50% {
+    transform: translateX(var(--garden-sway-distance, 2px)) rotate(calc(var(--garden-rotate, 0deg) + var(--garden-sway-angle, 1deg))) scaleX(var(--garden-flip, 1));
+  }
+}
+
+.garden-flower-sway {
+  animation: garden-flower-sway var(--garden-sway-duration, 3.6s) ease-in-out infinite;
+  animation-delay: var(--garden-sway-delay, 0s);
+  transform-origin: bottom center;
+  will-change: transform;
+}

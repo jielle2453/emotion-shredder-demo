@@ -1,0 +1,11 @@
+@font-face {
+  font-family: "ChenYuluoyan 2.0 Thin";
+  src: url("../assets/fonts/ChenYuluoyan-2.0-Thin.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-chenyuluoyan-thin {
+  font-family: "ChenYuluoyan 2.0 Thin", "Noto Sans TC", "Noto Sans JP", sans-serif;
+}

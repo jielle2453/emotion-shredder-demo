@@ -1,0 +1,2 @@
+-- Baseline placeholder for a migration that already exists on the linked
+-- Supabase project before this local workspace migration history was created.

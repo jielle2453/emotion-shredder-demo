@@ -1,0 +1,473 @@
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import svgPaths from "./svg-sbn47rlj4l";
+import { FLOWERS, FlowerArtwork, clampFlowerIndex } from "../../utils/flowers";
+import { dailyFinalEmotionRecords, getEmotionRecords, recordsInMonth, revealedEmotionRecords } from "../../utils/records";
+
+function Group5() {
+  return (
+    <div className="h-[112.903px] relative w-[96.04px]">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 96.0401 112.903">
+        <g id="Group 8">
+          <path d={svgPaths.p27aa300} fill="var(--fill-0, #EFB2C2)" id="Vector 1" />
+          <path d={svgPaths.p324ea800} fill="var(--fill-0, #B5DAE2)" id="Vector 2" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Group1() {
+  return (
+    <div className="absolute h-[133.367px] left-[43px] top-[555px] w-[87.999px]">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 87.9991 133.367">
+        <g id="Group 3">
+          <path d={svgPaths.p1cc4c080} fill="var(--fill-0, #FABBA9)" id="Vector 4" />
+          <path d={svgPaths.p129dbf70} fill="var(--fill-0, #B2A8A7)" id="Subtract" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Group() {
+  return (
+    <div className="h-[114.065px] relative w-[79.19px]">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 79.1905 114.065">
+        <g id="Group 2">
+          <path d={svgPaths.p13d60300} fill="var(--fill-0, #F5CF88)" id="Vector 3" />
+          <path clipRule="evenodd" d={svgPaths.p2d831c40} fill="var(--fill-0, #C4C4C4)" fillRule="evenodd" id="Subtract" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Group2() {
+  return (
+    <div className="absolute h-[200.435px] left-[105px] top-[480px] w-[84.165px]">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 84.1647 200.435">
+        <g id="Group 4">
+          <path d={svgPaths.p149d800} fill="var(--fill-0, #C2A8C1)" id="Vector 8" />
+          <path d={svgPaths.p178dd580} fill="var(--fill-0, #B9C9BF)" id="Subtract" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Group3() {
+  return (
+    <div className="absolute h-[144.505px] left-[198px] top-[535px] w-[81px]">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 81 144.505">
+        <g id="Group 5">
+          <path d={svgPaths.p3d025600} fill="var(--fill-0, #F9A092)" id="Vector 13" />
+          <path d={svgPaths.p2e55b780} fill="var(--fill-0, #BACAC0)" id="Subtract" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Group4() {
+  return (
+    <div className="absolute h-[124.434px] left-[162px] top-[418px] w-[92px]">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 92 124.434">
+        <g id="Group 6">
+          <path d={svgPaths.p28ee5380} fill="var(--fill-0, #E9D4DD)" id="Vector 18" />
+          <path d={svgPaths.p2c310680} fill="var(--fill-0, #B6DBE4)" id="Vector 19" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Flower() {
+  return (
+    <div className="relative shrink-0 size-[36px]" data-name="flower">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 36 36">
+        <g id="flower">
+          <path d={svgPaths.p37336300} fill="var(--fill-0, #958475)" id="Vector" />
+          <path d={svgPaths.p2016c800} id="Vector_2" stroke="var(--stroke-0, #958475)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Calender() {
+  return (
+    <div className="relative shrink-0 size-[36px]" data-name="calender">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 36 36">
+        <g id="calender">
+          <path d={svgPaths.p17502100} fill="var(--fill-0, #F2EEEA)" id="Vector" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Home() {
+  return (
+    <div className="relative shrink-0 size-[36px]" data-name="home">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 36 36">
+        <g id="home">
+          <path d={svgPaths.p2c30b280} fill="var(--fill-0, #F2EEEA)" id="Vector" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Collection() {
+  return (
+    <div className="relative shrink-0 size-[36px]" data-name="collection">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 36 36">
+        <g id="collection">
+          <path d={svgPaths.pf609f00} fill="var(--fill-0, #F2EEEA)" id="Vector" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Setting() {
+  return (
+    <div className="relative shrink-0 size-[36px]" data-name="setting">
+      <svg className="absolute block inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 36 36">
+        <g id="setting">
+          <path d={svgPaths.p8073b80} fill="var(--fill-0, #F2EEEA)" id="Vector" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+const APP_WIDTH = 402;
+const NAV_TOP = 798;
+const NAV_COLOR = "#dfd4ca";
+const MARIGOLD_FLOWER_INDEX = 2;
+const TULIP_FLOWER_INDEX = 10;
+const CURRENT_PREVIEW_LAYOUT_SIGNATURE = "7,2,1,10,10,5,1";
+const TODAY_PREVIEW_LAYOUT_SIGNATURE = "7,2,1,10,10,5,1,2";
+
+function getOneOffLayoutNudge(flowerIndexes: number[], flowerCursor: number, flowerIndex: number) {
+  const signature = flowerIndexes.join(",");
+
+  if (signature === CURRENT_PREVIEW_LAYOUT_SIGNATURE && flowerCursor === 1 && flowerIndex === MARIGOLD_FLOWER_INDEX) {
+    return { x: -58, y: 0, rotate: 0, swayAngle: 0 };
+  }
+
+  if (signature === TODAY_PREVIEW_LAYOUT_SIGNATURE) {
+    const nonSunflowerLift = flowerCursor === 0 ? 0 : -50;
+
+    if (flowerCursor === 0 && flowerIndex === 7) {
+      return { x: -18, y: 54 };
+    }
+
+    if (flowerCursor === 6 && flowerIndex === 1) {
+      return { x: -48, y: -8 + nonSunflowerLift };
+    }
+
+    if (flowerCursor === 7 && flowerIndex === MARIGOLD_FLOWER_INDEX) {
+      return { x: 16, y: 6 + nonSunflowerLift };
+    }
+
+    if (flowerIndex === TULIP_FLOWER_INDEX) {
+      return { x: 0, y: nonSunflowerLift - 32 };
+    }
+
+    return { x: 0, y: nonSunflowerLift };
+  }
+
+  return { x: 0, y: 0 };
+}
+
+function getSoilHeight(count: number) {
+  if (count <= 0) return 170;
+  if (count <= 3) return 210;
+  if (count <= 7) return 300;
+  if (count <= 12) return 380;
+  if (count <= 18) return 500;
+  return 555;
+}
+
+function getFlowerHeight(count: number) {
+  if (count <= 1) return 285;
+  if (count <= 3) return 255;
+  if (count <= 7) return 205;
+  if (count <= 12) return 168;
+  if (count <= 18) return 140;
+  return 122;
+}
+
+function getRowCount(count: number) {
+  if (count <= 2) return 1;
+  if (count <= 5) return 2;
+  if (count <= 9) return 3;
+  if (count <= 14) return 4;
+  if (count <= 20) return 5;
+  return 6;
+}
+
+function buildTriangleRows(count: number) {
+  if (count <= 0) return [];
+
+  const rowCount = getRowCount(count);
+  const weights = Array.from({ length: rowCount }, (_, index) => index + 1);
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  const rows = weights.map((weight) => Math.max(1, Math.floor((weight / weightTotal) * count)));
+
+  while (rows.reduce((sum, value) => sum + value, 0) < count) {
+    for (let index = rows.length - 1; index >= 0 && rows.reduce((sum, value) => sum + value, 0) < count; index -= 1) {
+      rows[index] += 1;
+    }
+  }
+
+  while (rows.reduce((sum, value) => sum + value, 0) > count) {
+    const removableIndex = rows.findIndex((value) => value > 1);
+    if (removableIndex < 0) break;
+    rows[removableIndex] -= 1;
+  }
+
+  if (count >= 20 && rows.length >= 5) {
+    const borrowFromFullestRow = () => {
+      let fullestIndex = rows.length - 1;
+      for (let index = rows.length - 1; index > 1; index -= 1) {
+        if (rows[index] > rows[fullestIndex]) fullestIndex = index;
+      }
+      if (rows[fullestIndex] > 1) rows[fullestIndex] -= 1;
+    };
+
+    if (rows[0] < 2) {
+      rows[0] += 1;
+      borrowFromFullestRow();
+    }
+
+    if (rows[1] < 3) {
+      rows[1] += 1;
+      borrowFromFullestRow();
+    }
+  }
+
+  return rows;
+}
+
+function pseudo(seed: number) {
+  const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+function signed(seed: number) {
+  return pseudo(seed) * 2 - 1;
+}
+
+const DUPLICATE_FLOWER_PATTERN = [
+  { x: -1, y: 0.8, rotate: -8, scale: 1.02 },
+  { x: 1, y: -1, rotate: 9, scale: 0.96 },
+  { x: -0.65, y: -0.45, rotate: -6, scale: 0.98 },
+  { x: 0.75, y: 0.5, rotate: 7, scale: 1 },
+];
+
+function getGardenLayout(flowerIndexes: number[]) {
+  const count = flowerIndexes.length;
+  const soilHeight = getSoilHeight(count);
+  const soilTop = NAV_TOP - soilHeight;
+  const flowerHeight = getFlowerHeight(count);
+  const flowerWidth = Math.round(flowerHeight * 0.7);
+  const rows = buildTriangleRows(count);
+  const topBaseY = soilTop + (count <= 3 ? 118 : count <= 12 ? 62 : count <= 18 ? 76 : 94);
+  const bottomBaseY = NAV_TOP - (count <= 3 ? 72 : count <= 12 ? 84 : 92);
+  const rowGap = rows.length > 1 ? (bottomBaseY - topBaseY) / (rows.length - 1) : 0;
+  let flowerCursor = 0;
+  const duplicateSeen = new Map<number, number>();
+  const duplicateTotals = flowerIndexes.reduce((totals, flowerIndex) => {
+    totals.set(flowerIndex, (totals.get(flowerIndex) ?? 0) + 1);
+    return totals;
+  }, new Map<number, number>());
+
+  return rows.flatMap((rowSize, rowIndex) => {
+    const rowProgress = rows.length === 1 ? 1 : rowIndex / (rows.length - 1);
+    const baseY = rows.length === 1 ? bottomBaseY : topBaseY + rowIndex * rowGap;
+    const depthScale = count <= 3
+      ? 1
+      : 0.97 + rowProgress * 0.06;
+    const spacing = Math.min(92, Math.max(52, flowerWidth * (count <= 3 ? 0.78 : 0.6)));
+    const rowJitter = signed(rowIndex + count * 0.31) * (count <= 7 ? 10 : 12);
+
+    return Array.from({ length: rowSize }, (_, itemIndex) => {
+      const flowerIndex = flowerIndexes[flowerCursor];
+      const duplicateOrder = duplicateSeen.get(flowerIndex) ?? 0;
+      duplicateSeen.set(flowerIndex, duplicateOrder + 1);
+      const duplicateTotal = duplicateTotals.get(flowerIndex) ?? 1;
+      const duplicatePattern = duplicateTotal > 1
+        ? DUPLICATE_FLOWER_PATTERN[duplicateOrder % DUPLICATE_FLOWER_PATTERN.length]
+        : { x: 0, y: 0, rotate: 0, scale: 1 };
+      const duplicateSpreadX = count <= 7 ? 78 : count <= 12 ? 66 : 54;
+      const duplicateSpreadY = count <= 7 ? 58 : count <= 12 ? 48 : 38;
+      const normalized = rowSize === 1 ? 0 : itemIndex / (rowSize - 1) - 0.5;
+      const edgeWeight = rowSize === 1 ? 0 : Math.abs(normalized) * 2;
+      const individuality = signed(flowerCursor + flowerIndex * 1.7) * 0.035;
+      const sizeBoost = rowIndex === 0 && rowSize === 1 ? 0.12 : 0;
+      const itemHeight = Math.round(flowerHeight * Math.max(0.76, depthScale + individuality + sizeBoost) * duplicatePattern.scale);
+      const itemWidth = Math.round(flowerWidth * Math.max(0.76, depthScale + individuality + sizeBoost) * duplicatePattern.scale);
+      const maxRowSpan = count <= 3 ? 210 : count <= 12 ? 292 : 282;
+      const rowSpan = rowSize > 1 ? Math.min(spacing * (rowSize - 1), maxRowSpan) : 0;
+      const duplicateX = duplicatePattern.x * duplicateSpreadX;
+      const duplicateY = duplicatePattern.y * duplicateSpreadY;
+      const oneOffNudge = getOneOffLayoutNudge(flowerIndexes, flowerCursor, flowerIndex);
+      const centerX = APP_WIDTH / 2 + normalized * rowSpan + rowJitter + signed(flowerCursor + 2.4) * (count <= 7 ? 12 : 8) + duplicateX + oneOffNudge.x;
+      const arcDrop = edgeWeight * edgeWeight * (count <= 3 ? 16 : count <= 12 ? 14 : 18);
+      const lift = signed(flowerCursor + rowIndex * 2.13) * (count <= 3 ? 12 : 10);
+      const baseRotate = [-10, 7, -5, 8, -6, 4][flowerCursor % 6] + signed(flowerCursor + 4.9) * 2.5 + duplicatePattern.rotate;
+      const rotate = oneOffNudge.rotate ?? baseRotate;
+      const flip = pseudo(flowerCursor + flowerIndex * 0.77) > 0.58 ? -1 : 1;
+      const top = baseY - itemHeight + arcDrop + lift + duplicateY + oneOffNudge.y;
+      const left = Math.max(4, Math.min(APP_WIDTH - itemWidth - 4, centerX - itemWidth / 2));
+      const zIndex = Math.round(top + itemHeight);
+      const id = `${flowerIndex}-${flowerCursor}`;
+      flowerCursor += 1;
+
+      return {
+        id,
+        flowerIndex,
+        left,
+        top,
+        width: itemWidth,
+        height: itemHeight,
+        rotate,
+        swayAngle: oneOffNudge.swayAngle,
+        flip,
+        zIndex,
+      };
+    });
+  });
+}
+
+function Soil({ count }: { count: number }) {
+  const height = getSoilHeight(count);
+  const edgeY = Math.round(Math.min(145, Math.max(70, height * 0.25)));
+  const peakY = Math.round(Math.min(64, Math.max(32, height * 0.1)));
+
+  return (
+    <div className="absolute left-0 w-[402px]" style={{ top: `${NAV_TOP - height}px`, height }}>
+      <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox={`0 0 ${APP_WIDTH} ${height}`}>
+        <path d={`M0 ${edgeY} C96 ${peakY} 285 ${peakY} ${APP_WIDTH} ${edgeY} V${height} H0 Z`} fill="url(#garden_soil_gradient)" />
+        <defs>
+          <linearGradient gradientUnits="userSpaceOnUse" id="garden_soil_gradient" x1="201" x2="201" y1={peakY} y2={height}>
+            <stop stopColor="#D4B69B" />
+            <stop offset="1" stopColor={NAV_COLOR} />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function GardenFlower({
+  flowerIndex,
+  left,
+  top,
+  width,
+  height,
+  rotate,
+  swayAngle,
+  flip,
+  zIndex,
+}: {
+  flowerIndex: number;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  rotate: number;
+  swayAngle?: number;
+  flip: number;
+  zIndex: number;
+}) {
+  return (
+    <div
+      className="pointer-events-none absolute"
+      style={{
+        left,
+        top,
+        width,
+        height,
+        zIndex,
+      }}
+      aria-label={FLOWERS[flowerIndex]?.name}
+    >
+      <div
+        className="garden-flower-sway h-full w-full"
+        style={{
+          "--garden-rotate": `${rotate}deg`,
+          "--garden-flip": flip,
+          "--garden-sway-distance": `${1.8 + (flowerIndex % 3) * 0.45}px`,
+          "--garden-sway-angle": `${swayAngle ?? 1.1 + (zIndex % 4) * 0.25}deg`,
+          "--garden-sway-duration": `${3.4 + (flowerIndex % 4) * 0.25}s`,
+          "--garden-sway-delay": `${-0.35 * (zIndex % 7)}s`,
+        } as CSSProperties}
+      >
+        <FlowerArtwork flowerIndex={flowerIndex} decorative className="h-full w-full" imageClassName="h-full w-full" />
+      </div>
+    </div>
+  );
+}
+
+export default function Component() {
+  const [gardenMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
+  const [monthlyFlowerIndexes, setMonthlyFlowerIndexes] = useState<number[]>([]);
+  const gardenLayout = useMemo(() => getGardenLayout(monthlyFlowerIndexes), [monthlyFlowerIndexes]);
+
+  useEffect(() => {
+    let active = true;
+
+    getEmotionRecords()
+      .then((records) => {
+        const monthlyRecords = recordsInMonth(dailyFinalEmotionRecords(revealedEmotionRecords(records)), gardenMonth.year, gardenMonth.month);
+        const flowerIndexes = monthlyRecords
+          .slice()
+          .reverse()
+          .map((record) => clampFlowerIndex(record.flowerIndex))
+          .filter((index) => index >= 0 && index < FLOWERS.length);
+        if (active) setMonthlyFlowerIndexes(flowerIndexes);
+      })
+      .catch((err) => {
+        console.warn("Failed to load monthly garden flowers:", err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [gardenMonth.month, gardenMonth.year]);
+
+  return (
+    <div className="bg-white overflow-clip relative rounded-[40px] size-full" data-name="花圃">
+      <div className="absolute bg-[#dfd4ca] left-0 top-[798px] h-[76px] w-[402px]" />
+      <Soil count={monthlyFlowerIndexes.length} />
+      {gardenLayout.map((item) => (
+        <GardenFlower
+          key={item.id}
+          flowerIndex={item.flowerIndex}
+          left={item.left}
+          top={item.top}
+          width={item.width}
+          height={item.height}
+          rotate={item.rotate}
+          swayAngle={item.swayAngle}
+          flip={item.flip}
+          zIndex={item.zIndex}
+        />
+      ))}
+      <div className="absolute bg-[#dfd4ca] content-stretch flex gap-[40px] items-center justify-center left-[-1px] px-[32px] py-[20px] top-[798px] z-50" data-name="navigation bar">
+        <Flower />
+        <Calender />
+        <Home />
+        <Collection />
+        <Setting />
+      </div>
+    </div>
+  );
+}
