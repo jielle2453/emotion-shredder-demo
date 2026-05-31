@@ -39,7 +39,8 @@ type DemoFrame = {
   isFullscreen: boolean;
   offsetX: number;
   offsetY: number;
-  scale: number;
+  scaleX: number;
+  scaleY: number;
   width: number;
 };
 
@@ -78,7 +79,8 @@ export default function App() {
     isFullscreen: false,
     offsetX: 0,
     offsetY: 0,
-    scale: 1,
+    scaleX: 1,
+    scaleY: 1,
     width: DEMO_PHONE_WIDTH,
   });
   const [view, setView] = useState<View>("home");
@@ -114,17 +116,16 @@ export default function App() {
         (isTouchViewport && width < 1024 && aspectRatio < 0.8);
 
       if (isFullscreenViewport) {
-        const scale = Math.min(width / DEMO_PHONE_WIDTH, height / DEMO_PHONE_HEIGHT);
-        const fittedScale = Math.floor(scale * 10000) / 10000;
-        const scaledWidth = DEMO_PHONE_WIDTH * fittedScale;
-        const scaledHeight = DEMO_PHONE_HEIGHT * fittedScale;
+        const scaleX = width / DEMO_PHONE_WIDTH;
+        const scaleY = height / DEMO_PHONE_HEIGHT;
 
         setDemoFrame({
           height,
           isFullscreen: true,
-          offsetX: (width - scaledWidth) / 2,
-          offsetY: (height - scaledHeight) / 2,
-          scale: fittedScale,
+          offsetX: 0,
+          offsetY: 0,
+          scaleX,
+          scaleY,
           width,
         });
         return;
@@ -147,7 +148,8 @@ export default function App() {
         isFullscreen: false,
         offsetX: 0,
         offsetY: 0,
-        scale: Number(scale.toFixed(4)),
+        scaleX: Number(scale.toFixed(4)),
+        scaleY: Number(scale.toFixed(4)),
         width: DEMO_PHONE_WIDTH * scale,
       });
     };
@@ -427,7 +429,7 @@ export default function App() {
             top: demoFrame.offsetY,
             width: DEMO_PHONE_WIDTH,
             height: DEMO_PHONE_HEIGHT,
-            transform: `scale(${demoFrame.scale})`,
+            transform: `scale(${demoFrame.scaleX}, ${demoFrame.scaleY})`,
           }}
         >
         {isAuthLoading && (
