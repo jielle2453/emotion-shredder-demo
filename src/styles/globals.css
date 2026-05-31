@@ -49,7 +49,24 @@ body {
   transform-origin: top left;
 }
 
-@media (max-width: 719px) {
+.demo-page--fullscreen {
+  padding: 0;
+}
+
+.demo-page--fullscreen .demo-phone-shell::before {
+  display: none;
+}
+
+.demo-page--fullscreen .demo-phone-device {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.demo-page--fullscreen .demo-phone-device > * {
+  border-radius: 0 !important;
+}
+
+@media (max-width: 719px), (max-width: 899px) and (max-aspect-ratio: 7/10) {
   body {
     overflow: hidden;
   }

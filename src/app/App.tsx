@@ -30,11 +30,13 @@ type View =
   | "flowerDetail";
 
 const TABS: View[] = ["garden", "calendar", "home", "collection", "settings"];
+const DEMO_FULLSCREEN_BREAKPOINT = 900;
 const DEMO_PHONE_WIDTH = 402;
 const DEMO_PHONE_HEIGHT = 874;
 
 type DemoFrame = {
   height: number;
+  isFullscreen: boolean;
   offsetX: number;
   offsetY: number;
   scale: number;
@@ -73,6 +75,7 @@ export default function App() {
   const lastSproutNotificationRef = useRef("");
   const [demoFrame, setDemoFrame] = useState<DemoFrame>({
     height: DEMO_PHONE_HEIGHT,
+    isFullscreen: false,
     offsetX: 0,
     offsetY: 0,
     scale: 1,
@@ -95,15 +98,29 @@ export default function App() {
       const viewport = window.visualViewport;
       const width = viewport?.width ?? window.innerWidth;
       const height = viewport?.height ?? window.innerHeight;
-      const isSmallViewport = width < 720;
+      const aspectRatio = width / Math.max(height, 1);
+      const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
+      const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        navigatorWithStandalone.standalone === true;
+      const isTouchViewport =
+        window.matchMedia("(pointer: coarse)").matches ||
+        window.navigator.maxTouchPoints > 0;
+      const isPhoneShapedViewport =
+        width < 720 || (width < DEMO_FULLSCREEN_BREAKPOINT && aspectRatio < 0.7);
+      const isFullscreenViewport =
+        isPhoneShapedViewport ||
+        isStandalone ||
+        (isTouchViewport && width < 1024 && aspectRatio < 0.8);
 
-      if (isSmallViewport) {
+      if (isFullscreenViewport) {
         const scale = Math.max(width / DEMO_PHONE_WIDTH, height / DEMO_PHONE_HEIGHT);
         const scaledWidth = DEMO_PHONE_WIDTH * scale;
         const scaledHeight = DEMO_PHONE_HEIGHT * scale;
 
         setDemoFrame({
           height,
+          isFullscreen: true,
           offsetX: (width - scaledWidth) / 2,
           offsetY: (height - scaledHeight) / 2,
           scale: Number(scale.toFixed(4)),
@@ -126,6 +143,7 @@ export default function App() {
 
       setDemoFrame({
         height: DEMO_PHONE_HEIGHT * scale,
+        isFullscreen: false,
         offsetX: 0,
         offsetY: 0,
         scale: Number(scale.toFixed(4)),
@@ -393,7 +411,7 @@ export default function App() {
   };
 
   return (
-    <div className="demo-page">
+    <div className={demoFrame.isFullscreen ? "demo-page demo-page--fullscreen" : "demo-page"}>
       <div
         className="demo-phone-shell"
         style={{

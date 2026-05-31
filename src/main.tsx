@@ -11,6 +11,10 @@
         .register(`${import.meta.env.BASE_URL}sw.js`, {
           scope: import.meta.env.BASE_URL,
         })
+        .then((registration) => {
+          registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+          void registration.update();
+        })
         .catch((err) => {
           console.warn("Service worker registration failed:", err);
         });
