@@ -1,5 +1,11 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import svgPaths from "./svg-sbn47rlj4l";
+import cloudFrame1 from "../../assets/garden-backgrounds/cloud-1.png";
+import cloudFrame2 from "../../assets/garden-backgrounds/cloud-2.png";
+import rainFrame1 from "../../assets/garden-backgrounds/rain-1.png";
+import rainFrame2 from "../../assets/garden-backgrounds/rain-2.png";
+import sunFrame1 from "../../assets/garden-backgrounds/sun-1.png";
+import sunFrame2 from "../../assets/garden-backgrounds/sun-2.png";
 import { FLOWERS, FlowerArtwork, clampFlowerIndex } from "../../utils/flowers";
 import { dailyFinalEmotionRecords, getEmotionRecords, revealedEmotionRecords } from "../../utils/records";
 
@@ -145,6 +151,20 @@ function Setting() {
 const APP_WIDTH = 402;
 const NAV_TOP = 798;
 const NAV_COLOR = "#dfd4ca";
+const GARDEN_BACKGROUND_MODES = ["plain", "cloud", "sun", "rain"] as const;
+
+type GardenBackgroundMode = (typeof GARDEN_BACKGROUND_MODES)[number];
+
+const GARDEN_BACKGROUND_FRAMES: Record<Exclude<GardenBackgroundMode, "plain">, [string, string]> = {
+  cloud: [cloudFrame1, cloudFrame2],
+  sun: [sunFrame1, sunFrame2],
+  rain: [rainFrame1, rainFrame2],
+};
+
+function nextGardenBackgroundMode(mode: GardenBackgroundMode) {
+  const index = GARDEN_BACKGROUND_MODES.indexOf(mode);
+  return GARDEN_BACKGROUND_MODES[(index + 1) % GARDEN_BACKGROUND_MODES.length];
+}
 
 function getSoilHeight(count: number) {
   if (count <= 0) return 170;
@@ -425,6 +445,53 @@ function getGardenLayout(flowerIndexes: number[]) {
   return softenFlowerOverlaps(anchorDenseClusterFlowers(layout));
 }
 
+function getGardenTapTarget(items: GardenLayoutItem[], x: number, y: number) {
+  let best: { item: GardenLayoutItem; score: number } | null = null;
+
+  for (const item of items) {
+    const head = getFlowerHeadBounds(item);
+    const headScore = Math.hypot(
+      (x - head.centerX) / (head.width / 2 + 18),
+      (y - head.centerY) / (head.height / 2 + 18),
+    );
+    const stemScore = Math.hypot(
+      (x - (item.left + item.width / 2)) / (item.width * 0.26 + 16),
+      (y - (item.top + item.height * 0.62)) / (item.height * 0.42 + 20),
+    );
+    const score = Math.min(headScore, stemScore);
+
+    if (score > 1.35) continue;
+    if (!best || score < best.score || (Math.abs(score - best.score) < 0.08 && item.zIndex > best.item.zIndex)) {
+      best = { item, score };
+    }
+  }
+
+  return best?.item ?? null;
+}
+
+function GardenBackground({ mode }: { mode: GardenBackgroundMode }) {
+  if (mode === "plain") return null;
+
+  const [frame1, frame2] = GARDEN_BACKGROUND_FRAMES[mode];
+
+  return (
+    <div aria-hidden="true" className="absolute inset-0 z-0 bg-white" data-garden-background-mode={mode}>
+      <img
+        alt=""
+        className="garden-background-frame garden-background-frame-a absolute inset-0 h-full w-full object-cover"
+        draggable={false}
+        src={frame1}
+      />
+      <img
+        alt=""
+        className="garden-background-frame garden-background-frame-b absolute inset-0 h-full w-full object-cover"
+        draggable={false}
+        src={frame2}
+      />
+    </div>
+  );
+}
+
 function Soil({ count }: { count: number }) {
   const height = getSoilHeight(count);
   const edgeY = Math.round(Math.min(145, Math.max(70, height * 0.25)));
@@ -446,6 +513,7 @@ function Soil({ count }: { count: number }) {
 }
 
 function GardenFlower({
+  id,
   flowerIndex,
   left,
   top,
@@ -455,7 +523,10 @@ function GardenFlower({
   swayAngle,
   flip,
   zIndex,
+  isShaking,
+  shakeToken,
 }: {
+  id: string;
   flowerIndex: number;
   left: number;
   top: number;
@@ -465,10 +536,15 @@ function GardenFlower({
   swayAngle?: number;
   flip: number;
   zIndex: number;
+  isShaking: boolean;
+  shakeToken: number;
 }) {
   return (
     <div
+      aria-hidden="true"
       className="pointer-events-none absolute"
+      data-garden-flower-id={id}
+      data-garden-flower-name={FLOWERS[flowerIndex]?.name}
       style={{
         left,
         top,
@@ -476,20 +552,24 @@ function GardenFlower({
         height,
         zIndex,
       }}
-      aria-label={FLOWERS[flowerIndex]?.name}
     >
       <div
-        className="garden-flower-sway h-full w-full"
-        style={{
-          "--garden-rotate": `${rotate}deg`,
-          "--garden-flip": flip,
-          "--garden-sway-distance": `${1.8 + (flowerIndex % 3) * 0.45}px`,
-          "--garden-sway-angle": `${swayAngle ?? 1.1 + (zIndex % 4) * 0.25}deg`,
-          "--garden-sway-duration": `${3.4 + (flowerIndex % 4) * 0.25}s`,
-          "--garden-sway-delay": `${-0.35 * (zIndex % 7)}s`,
-        } as CSSProperties}
+        key={isShaking ? `${id}-${shakeToken}` : `${id}-rest`}
+        className={isShaking ? "garden-flower-tap-shake h-full w-full" : "h-full w-full"}
       >
-        <FlowerArtwork flowerIndex={flowerIndex} decorative className="h-full w-full" imageClassName="h-full w-full" />
+        <div
+          className="garden-flower-sway h-full w-full"
+          style={{
+            "--garden-rotate": `${rotate}deg`,
+            "--garden-flip": flip,
+            "--garden-sway-distance": `${1.8 + (flowerIndex % 3) * 0.45}px`,
+            "--garden-sway-angle": `${swayAngle ?? 1.1 + (zIndex % 4) * 0.25}deg`,
+            "--garden-sway-duration": `${3.4 + (flowerIndex % 4) * 0.25}s`,
+            "--garden-sway-delay": `${-0.35 * (zIndex % 7)}s`,
+          } as CSSProperties}
+        >
+          <FlowerArtwork flowerIndex={flowerIndex} decorative className="h-full w-full" imageClassName="h-full w-full" />
+        </div>
       </div>
     </div>
   );
@@ -497,7 +577,44 @@ function GardenFlower({
 
 export default function Component() {
   const [allFlowerIndexes, setAllFlowerIndexes] = useState<number[]>([]);
+  const [flowerShake, setFlowerShake] = useState<{ id: string; token: number } | null>(null);
+  const [gardenBackgroundMode, setGardenBackgroundMode] = useState<GardenBackgroundMode>("plain");
+  const shakeTokenRef = useRef(0);
+  const shakeTimeoutRef = useRef<number | null>(null);
   const gardenLayout = useMemo(() => getGardenLayout(allFlowerIndexes), [allFlowerIndexes]);
+
+  const triggerFlowerShake = (id: string) => {
+    const token = shakeTokenRef.current + 1;
+    shakeTokenRef.current = token;
+    setFlowerShake({ id, token });
+
+    if (shakeTimeoutRef.current !== null) {
+      window.clearTimeout(shakeTimeoutRef.current);
+    }
+
+    shakeTimeoutRef.current = window.setTimeout(() => {
+      setFlowerShake((current) => (current?.id === id && current.token === token ? null : current));
+      shakeTimeoutRef.current = null;
+    }, 520);
+  };
+
+  const handleGardenPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) * (APP_WIDTH / rect.width);
+    const y = (event.clientY - rect.top) * (NAV_TOP / rect.height);
+    const target = getGardenTapTarget(gardenLayout, x, y);
+
+    if (target) {
+      event.preventDefault();
+      triggerFlowerShake(target.id);
+      return;
+    }
+
+    event.preventDefault();
+    setGardenBackgroundMode((current) => nextGardenBackgroundMode(current));
+  };
 
   useEffect(() => {
     let active = true;
@@ -520,13 +637,23 @@ export default function Component() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (shakeTimeoutRef.current !== null) {
+        window.clearTimeout(shakeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="bg-white overflow-clip relative rounded-[40px] size-full" data-name="花圃">
+      <GardenBackground mode={gardenBackgroundMode} />
       <div className="absolute bg-[#dfd4ca] left-0 top-[798px] h-[76px] w-[402px]" />
       <Soil count={allFlowerIndexes.length} />
       {gardenLayout.map((item) => (
         <GardenFlower
           key={item.id}
+          id={item.id}
           flowerIndex={item.flowerIndex}
           left={item.left}
           top={item.top}
@@ -536,8 +663,21 @@ export default function Component() {
           swayAngle={item.swayAngle}
           flip={item.flip}
           zIndex={item.zIndex}
+          isShaking={flowerShake?.id === item.id}
+          shakeToken={flowerShake?.token ?? 0}
         />
       ))}
+      <div
+        aria-label="Garden interaction area"
+        className="absolute left-0 top-0 z-40 h-[798px] w-[402px]"
+        data-garden-interaction-layer
+        onPointerDown={handleGardenPointerDown}
+        role="presentation"
+        style={{
+          WebkitTapHighlightColor: "transparent",
+          touchAction: "manipulation",
+        }}
+      />
       <div className="absolute bg-[#dfd4ca] content-stretch flex gap-[40px] items-center justify-center left-[-1px] px-[32px] py-[20px] top-[798px] z-50" data-name="navigation bar">
         <Flower />
         <Calender />
