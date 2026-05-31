@@ -255,6 +255,7 @@ const DUPLICATE_FLOWER_PATTERN = [
   { x: -0.65, y: -0.45, rotate: -6, scale: 0.98 },
   { x: 0.75, y: 0.5, rotate: 7, scale: 1 },
 ];
+const ROUND_HEAD_FLOWER_INDEXES = new Set([2, 6, 7]);
 
 type GardenLayoutItem = {
   id: string;
@@ -274,12 +275,13 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function getFlowerHeadBounds(item: GardenLayoutItem) {
-  const width = item.width * 0.66;
-  const height = item.height * 0.42;
+  const isRoundHead = ROUND_HEAD_FLOWER_INDEXES.has(item.flowerIndex);
+  const width = item.width * (isRoundHead ? 0.88 : 0.66);
+  const height = item.height * (isRoundHead ? 0.5 : 0.42);
 
   return {
     centerX: item.left + item.width / 2,
-    centerY: item.top + item.height * 0.25,
+    centerY: item.top + item.height * (isRoundHead ? 0.3 : 0.25),
     height,
     width,
   };
@@ -288,7 +290,7 @@ function getFlowerHeadBounds(item: GardenLayoutItem) {
 function softenFlowerOverlaps(items: GardenLayoutItem[]) {
   const adjusted = items.map((item) => ({ ...item }));
 
-  for (let pass = 0; pass < 2; pass += 1) {
+  for (let pass = 0; pass < 3; pass += 1) {
     for (let index = 1; index < adjusted.length; index += 1) {
       const current = adjusted[index];
 
@@ -302,11 +304,23 @@ function softenFlowerOverlaps(items: GardenLayoutItem[]) {
         if (overlapX <= 0 || overlapY <= 0) continue;
 
         const direction = currentHead.centerX >= previousHead.centerX ? 1 : -1;
-        const shiftX = Math.min(18, overlapX * 0.42 + 4) * direction;
-        const shiftY = Math.min(12, overlapY * 0.22);
+        const isRoundHeadCollision =
+          ROUND_HEAD_FLOWER_INDEXES.has(current.flowerIndex) ||
+          ROUND_HEAD_FLOWER_INDEXES.has(previous.flowerIndex);
+        const shiftX = Math.min(isRoundHeadCollision ? 24 : 18, overlapX * (isRoundHeadCollision ? 0.5 : 0.42) + 4) * direction;
+        const shiftY = Math.min(isRoundHeadCollision ? 18 : 12, overlapY * (isRoundHeadCollision ? 0.34 : 0.22));
+        const nextLeft = clamp(current.left + shiftX, 10, APP_WIDTH - current.width - 10);
+        const appliedShiftX = nextLeft - current.left;
 
-        current.left = clamp(current.left + shiftX, 10, APP_WIDTH - current.width - 10);
+        current.left = nextLeft;
         current.top += currentHead.centerY >= previousHead.centerY ? shiftY : -shiftY * 0.35;
+
+        if (Math.abs(appliedShiftX) < Math.abs(shiftX) * 0.6) {
+          const fallbackShift = Math.min(18, Math.abs(shiftX - appliedShiftX) * 0.55 + 4) * -direction;
+          previous.left = clamp(previous.left + fallbackShift, 10, APP_WIDTH - previous.width - 10);
+          previous.top -= isRoundHeadCollision ? 6 : 3;
+          current.top += isRoundHeadCollision ? 6 : 3;
+        }
       }
     }
   }
