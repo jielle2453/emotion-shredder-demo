@@ -255,6 +255,7 @@ const DUPLICATE_FLOWER_PATTERN = [
   { x: -0.65, y: -0.45, rotate: -6, scale: 0.98 },
   { x: 0.75, y: 0.5, rotate: 7, scale: 1 },
 ];
+const HYDRANGEA_FLOWER_INDEX = 6;
 const ROUND_HEAD_FLOWER_INDEXES = new Set([2, 6, 7]);
 
 type GardenLayoutItem = {
@@ -331,6 +332,24 @@ function softenFlowerOverlaps(items: GardenLayoutItem[]) {
   }));
 }
 
+function anchorDenseClusterFlowers(items: GardenLayoutItem[]) {
+  if (items.length < 6) return items;
+
+  return items.map((item) => {
+    if (item.flowerIndex !== HYDRANGEA_FLOWER_INDEX) return item;
+
+    const targetCenterX = APP_WIDTH * (items.length <= 12 ? 0.7 : 0.62);
+    const targetTop = NAV_TOP - (items.length <= 12 ? 310 : 290);
+    const targetLeft = targetCenterX - item.width / 2;
+
+    return {
+      ...item,
+      left: clamp(item.left * 0.25 + targetLeft * 0.75, 10, APP_WIDTH - item.width - 10),
+      top: Math.min(item.top, targetTop),
+    };
+  });
+}
+
 function getGardenLayout(flowerIndexes: number[]) {
   const count = flowerIndexes.length;
   const soilHeight = getSoilHeight(count);
@@ -403,7 +422,7 @@ function getGardenLayout(flowerIndexes: number[]) {
     });
   });
 
-  return softenFlowerOverlaps(layout);
+  return softenFlowerOverlaps(anchorDenseClusterFlowers(layout));
 }
 
 function Soil({ count }: { count: number }) {
