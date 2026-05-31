@@ -73,6 +73,7 @@ function fallbackAnalysisForText(text: string) {
 export default function App() {
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
   const hasStartedBackgroundAudioRef = useRef(false);
+  const fullscreenViewportRef = useRef<{ height: number; width: number } | null>(null);
   const lastSproutNotificationRef = useRef("");
   const [demoFrame, setDemoFrame] = useState<DemoFrame>({
     height: DEMO_PHONE_HEIGHT,
@@ -98,8 +99,15 @@ export default function App() {
   useEffect(() => {
     const updateDemoFrame = () => {
       const viewport = window.visualViewport;
-      const width = viewport?.width ?? window.innerWidth;
-      const height = viewport?.height ?? window.innerHeight;
+      const rawWidth = viewport?.width ?? window.innerWidth;
+      const rawHeight = viewport?.height ?? window.innerHeight;
+      const stableFullscreenViewport = fullscreenViewportRef.current;
+      const isKeyboardResize =
+        stableFullscreenViewport !== null &&
+        Math.abs(rawWidth - stableFullscreenViewport.width) < 32 &&
+        rawHeight < stableFullscreenViewport.height - 120;
+      const width = isKeyboardResize ? stableFullscreenViewport.width : rawWidth;
+      const height = isKeyboardResize ? stableFullscreenViewport.height : rawHeight;
       const aspectRatio = width / Math.max(height, 1);
       const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
       const isStandalone =
@@ -116,6 +124,10 @@ export default function App() {
         (isTouchViewport && width < 1024 && aspectRatio < 0.8);
 
       if (isFullscreenViewport) {
+        if (!isKeyboardResize) {
+          fullscreenViewportRef.current = { height, width };
+        }
+
         const scaleX = width / DEMO_PHONE_WIDTH;
         const scaleY = height / DEMO_PHONE_HEIGHT;
 
@@ -130,6 +142,8 @@ export default function App() {
         });
         return;
       }
+
+      fullscreenViewportRef.current = null;
 
       const margin = 32;
       const scale = Math.min(
