@@ -4,6 +4,8 @@ import bouquetBack from "../../assets/monthly-bouquet/bouquet-back.png";
 import bouquetFront from "../../assets/monthly-bouquet/bouquet-front.png";
 import messageCard from "../../assets/monthly-bouquet/message-card.png";
 import graduationCap from "../../assets/monthly-bouquet/graduation.png";
+import downloadIcon from "../../assets/monthly-bouquet/download.png";
+import shareIcon from "../../assets/monthly-bouquet/share.png";
 import { FLOWERS, clampFlowerIndex } from "../../utils/flowers";
 import type { AppLanguage } from "../../utils/i18n";
 import { recordsInMonth, type StoredEmotionRecord } from "../../utils/records";
@@ -29,8 +31,10 @@ const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", 
 const BOUQUET_CENTER_X = 201;
 const BOUQUET_FLOWER_Y_OFFSET = 144;
 const BOUQUET_SIZE_MULTIPLIER = 1.1;
-const SHARE_CARD_WIDTH = 1080;
-const SHARE_CARD_HEIGHT = 1920;
+const SHARE_IMAGE_WIDTH = 1080;
+const SHARE_IMAGE_HEIGHT = 1080;
+const SHARE_SCENE_SCALE = 2.17;
+const SHARE_SCENE_TOP_MARGIN = 70;
 const MESSAGE_CARD_FRAME = { left: 18, top: 236, width: 174, height: 261 };
 const MESSAGE_CARD_TEXT = { centerX: 86, centerY: 104, width: 138, rotate: -13 };
 const GRADUATION_CAP_FRAME = { left: 248, top: 238, width: 130, height: 195 };
@@ -337,10 +341,16 @@ function downloadBlob(blob: Blob, filename: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function bouquetFilename(period: BouquetPeriod, language: AppLanguage) {
+  return language === "en"
+    ? `${bouquetMonthName(period, language)}-bouquet.png`
+    : `${bouquetMonthName(period, language)}花束.png`;
+}
+
 async function createBouquetShareBlob(flowerIndexes: number[], period: BouquetPeriod, language: AppLanguage) {
   const canvas = document.createElement("canvas");
-  canvas.width = SHARE_CARD_WIDTH;
-  canvas.height = SHARE_CARD_HEIGHT;
+  canvas.width = SHARE_IMAGE_WIDTH;
+  canvas.height = SHARE_IMAGE_HEIGHT;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is not available");
 
@@ -352,36 +362,13 @@ async function createBouquetShareBlob(flowerIndexes: number[], period: BouquetPe
     ...FLOWERS.map((flower) => loadImage(flower.imageSrc)),
   ]);
   const layout = bouquetFlowerLayout(flowerIndexes);
-  const title = bouquetArrivalTitle(period, language);
-  const monthName = bouquetMonthName(period, language);
   const cardMessage = bouquetCardMessage(flowerIndexes, period, language);
-  const shareLine = language === "en"
-    ? "I gathered these flowers in Emotion Shredder"
-    : "我在情緒碎紙機收集了這些花";
 
-  context.fillStyle = "#fffdfa";
-  context.fillRect(0, 0, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT);
-  context.fillStyle = "#f5eee7";
-  context.fillRect(0, SHARE_CARD_HEIGHT - 230, SHARE_CARD_WIDTH, 230);
-  context.fillStyle = "rgba(223, 212, 202, 0.18)";
-  context.beginPath();
-  context.ellipse(540, 1000, 420, 540, 0, 0, Math.PI * 2);
-  context.fill();
+  context.clearRect(0, 0, SHARE_IMAGE_WIDTH, SHARE_IMAGE_HEIGHT);
 
-  context.textAlign = "center";
-  context.fillStyle = "#958475";
-  context.font = language === "en"
-    ? '700 72px "Noto Sans TC", sans-serif'
-    : '300 86px "ChenYuluoyan 2.0 Thin", "Noto Sans TC", sans-serif';
-  context.fillText(title, SHARE_CARD_WIDTH / 2, 222);
-  context.font = language === "en"
-    ? '400 34px "Noto Sans TC", sans-serif'
-    : '400 38px "Noto Sans TC", sans-serif';
-  context.fillText(shareLine, SHARE_CARD_WIDTH / 2, 292);
-
-  const sceneScale = 1.85;
-  const sceneOriginX = SHARE_CARD_WIDTH / 2 - 201 * sceneScale;
-  const sceneOriginY = 92;
+  const sceneScale = SHARE_SCENE_SCALE;
+  const sceneOriginX = SHARE_IMAGE_WIDTH / 2 - 201 * sceneScale;
+  const sceneOriginY = SHARE_SCENE_TOP_MARGIN - MESSAGE_CARD_FRAME.top * sceneScale;
   drawContainImage(context, backImage, sceneOriginX, sceneOriginY + 318 * sceneScale, 402 * sceneScale, 360 * sceneScale);
   drawMessageCard(context, cardImage, cardMessage, sceneOriginX, sceneOriginY, sceneScale, language);
   drawGraduationCap(context, capImage, sceneOriginX, sceneOriginY, sceneScale);
@@ -398,16 +385,6 @@ async function createBouquetShareBlob(flowerIndexes: number[], period: BouquetPe
   context.restore();
 
   drawContainImage(context, frontImage, sceneOriginX, sceneOriginY + 318 * sceneScale, 402 * sceneScale, 360 * sceneScale);
-
-  context.fillStyle = "#958475";
-  context.font = language === "en"
-    ? '600 40px "Noto Sans TC", sans-serif'
-    : '500 42px "Noto Sans TC", sans-serif';
-  context.fillText(language === "en" ? `${monthName} Bouquet` : `${monthName}花束`, SHARE_CARD_WIDTH / 2, 1586);
-  context.font = language === "en"
-    ? '400 26px "Noto Sans TC", sans-serif'
-    : '400 30px "Noto Sans TC", sans-serif';
-  context.fillText(language === "en" ? "Emotion Shredder" : "情緒碎紙機", SHARE_CARD_WIDTH / 2, 1642);
 
   return canvasToBlob(canvas);
 }
@@ -437,24 +414,37 @@ export function MonthlyBouquetOverlay({
   period: BouquetPeriod;
 }) {
   const layout = useMemo(() => bouquetFlowerLayout(flowerIndexes), [flowerIndexes]);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const title = bouquetArrivalTitle(period, language);
   const subtitle = bouquetArrivalSubtitle(period, language);
   const cardMessage = bouquetCardMessage(flowerIndexes, period, language);
+  const isBusy = isDownloading || isSharing;
+
+  const downloadBouquet = async () => {
+    if (isBusy) return;
+
+    setIsDownloading(true);
+    try {
+      const blob = await createBouquetShareBlob(flowerIndexes, period, language);
+      downloadBlob(blob, bouquetFilename(period, language));
+    } catch (err) {
+      console.warn("Failed to download monthly bouquet:", err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const shareBouquet = async () => {
-    if (isSharing) return;
+    if (isBusy) return;
 
     setIsSharing(true);
     try {
       const blob = await createBouquetShareBlob(flowerIndexes, period, language);
-      const filename = language === "en"
-        ? `${bouquetMonthName(period, language)}-bouquet.png`
-        : `${bouquetMonthName(period, language)}花束.png`;
+      const filename = bouquetFilename(period, language);
       const file = new File([blob], filename, { type: "image/png" });
       const shareData: ShareData = {
         files: [file],
-        text: language === "en" ? "My monthly bouquet from Emotion Shredder" : "我的情緒碎紙機月花束",
         title,
       };
 
@@ -571,18 +561,34 @@ export function MonthlyBouquetOverlay({
           src={bouquetFront}
         />
       </div>
-      <button
-        aria-label="share monthly bouquet"
-        className="absolute bottom-[124px] left-1/2 z-[90] h-[44px] w-[142px] -translate-x-1/2 rounded-full bg-[#f1e6dc] px-[20px] text-[#6f6258] text-[17px] shadow-[0_8px_20px_rgba(0,0,0,0.22)]"
-        disabled={isSharing}
-        onClick={(event) => {
-          event.stopPropagation();
-          void shareBouquet();
-        }}
-        type="button"
-      >
-        {isSharing ? (language === "en" ? "Sharing" : "準備中") : (language === "en" ? "Share" : "分享花束")}
-      </button>
+      <div className="absolute bottom-[112px] left-1/2 z-[90] flex -translate-x-1/2 items-start gap-[42px]">
+        <button
+          aria-label="download monthly bouquet"
+          className="flex w-[58px] flex-col items-center gap-[7px] bg-transparent p-0 text-[#f8f1ea] text-[14px] leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.38)] disabled:opacity-60"
+          disabled={isBusy}
+          onClick={(event) => {
+            event.stopPropagation();
+            void downloadBouquet();
+          }}
+          type="button"
+        >
+          <img alt="" aria-hidden="true" className="size-[56px] object-contain" draggable={false} src={downloadIcon} />
+          <span>{language === "en" ? "Download" : "下載"}</span>
+        </button>
+        <button
+          aria-label="share monthly bouquet"
+          className="flex w-[58px] flex-col items-center gap-[7px] bg-transparent p-0 text-[#f8f1ea] text-[14px] leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.38)] disabled:opacity-60"
+          disabled={isBusy}
+          onClick={(event) => {
+            event.stopPropagation();
+            void shareBouquet();
+          }}
+          type="button"
+        >
+          <img alt="" aria-hidden="true" className="size-[56px] object-contain" draggable={false} src={shareIcon} />
+          <span>{language === "en" ? "Share" : "分享"}</span>
+        </button>
+      </div>
     </div>
   );
 }
