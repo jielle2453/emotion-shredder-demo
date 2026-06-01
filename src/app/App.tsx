@@ -12,12 +12,21 @@ import FlowerDetail from "../imports/花詳細/花詳細";
 import { analyzeEmotion, type EmotionRecord } from "../utils/backend";
 import { clampFlowerIndex } from "../utils/flowers";
 import { keywordsToText, normalizeKeywords, pickRandomKeywords } from "../utils/keywords";
-import { deleteAllEmotionRecords, getEmotionRecords, localDateKey, saveEmotionRecord } from "../utils/records";
+import { dailyFinalEmotionRecords, deleteAllEmotionRecords, getEmotionRecords, localDateKey, revealedEmotionRecords, saveEmotionRecord } from "../utils/records";
 import { supabase } from "../utils/supabaseClient";
 import type { AppLanguage } from "../utils/i18n";
 import shredderVideo from "../imports/_____.mp4";
 import backgroundMusic from "../assets/audio/First_Light_on_the_Leaves.mp3";
 import paperCrunch from "../assets/audio/paper_Crunch_1.mp3";
+import {
+  bouquetArrivalTitle,
+  bouquetMonthName,
+  bouquetPeriodKey,
+  monthlyFlowerIndexes,
+  MonthlyBouquetOverlay,
+  previousMonthPeriod,
+  type BouquetPeriod,
+} from "./components/MonthlyBouquet";
 
 type View =
   | "garden"
@@ -33,6 +42,8 @@ const TABS: View[] = ["garden", "calendar", "home", "collection", "settings"];
 const DEMO_FULLSCREEN_BREAKPOINT = 900;
 const DEMO_PHONE_WIDTH = 402;
 const DEMO_PHONE_HEIGHT = 874;
+const MONTHLY_BOUQUET_SEEN_PREFIX = "emotion-shredder:monthly-bouquet-seen";
+const MONTHLY_BOUQUET_NOTIFICATION_PREFIX = "emotion-shredder:monthly-bouquet-notification";
 
 type DemoFrame = {
   height: number;
@@ -70,11 +81,32 @@ function fallbackAnalysisForText(text: string) {
   return isMostlyEnglish(text) ? FALLBACK_ANALYSIS_EN : FALLBACK_ANALYSIS_ZH;
 }
 
+function monthlyBouquetStorageKey(prefix: string, userId: string, period: BouquetPeriod) {
+  return `${prefix}:${userId}:${bouquetPeriodKey(period)}`;
+}
+
+function hasLocalFlag(key: string) {
+  try {
+    return window.localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setLocalFlag(key: string) {
+  try {
+    window.localStorage.setItem(key, "1");
+  } catch {
+    // Ignore storage failures; the bouquet should still be usable.
+  }
+}
+
 export default function App() {
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
   const hasStartedBackgroundAudioRef = useRef(false);
   const fullscreenViewportRef = useRef<{ height: number; width: number } | null>(null);
   const lastSproutNotificationRef = useRef("");
+  const lastMonthlyBouquetNotificationRef = useRef("");
   const [demoFrame, setDemoFrame] = useState<DemoFrame>({
     height: DEMO_PHONE_HEIGHT,
     isFullscreen: false,
@@ -95,6 +127,9 @@ export default function App() {
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
   const [language, setLanguage] = useState<AppLanguage>("zh");
+  const [homeBouquetFlowerIndexes, setHomeBouquetFlowerIndexes] = useState<number[]>([]);
+  const [homeBouquetPeriod, setHomeBouquetPeriod] = useState<BouquetPeriod | null>(null);
+  const [isHomeBouquetOpen, setIsHomeBouquetOpen] = useState(false);
 
   useEffect(() => {
     const updateDemoFrame = () => {
@@ -287,6 +322,86 @@ export default function App() {
     return () => window.clearTimeout(timeout);
   }, [isAuthLoading, isNotificationEnabled, language, session]);
 
+  useEffect(() => {
+    if (!isNotificationEnabled || !session || isAuthLoading || typeof Notification === "undefined" || Notification.permission !== "granted") {
+      return undefined;
+    }
+
+    const today = new Date();
+    if (today.getDate() !== 1) return undefined;
+
+    const period = previousMonthPeriod(today);
+    const storageKey = monthlyBouquetStorageKey(MONTHLY_BOUQUET_NOTIFICATION_PREFIX, session.user.id, period);
+    if (hasLocalFlag(storageKey) || lastMonthlyBouquetNotificationRef.current === storageKey) return undefined;
+
+    let active = true;
+
+    const notifyMonthlyBouquet = async () => {
+      try {
+        const records = await getEmotionRecords();
+        const flowerIndexes = monthlyFlowerIndexes(
+          dailyFinalEmotionRecords(revealedEmotionRecords(records)),
+          period.year,
+          period.month,
+        );
+
+        if (!active || flowerIndexes.length === 0) return;
+
+        lastMonthlyBouquetNotificationRef.current = storageKey;
+        setLocalFlag(storageKey);
+        const monthName = bouquetMonthName(period, language);
+        new Notification(bouquetArrivalTitle(period, language), {
+          body: language === "en"
+            ? `Open Emotion Shredder, or revisit it later from the ${monthName} gift in the calendar.`
+            : `打開情緒碎紙機查看，也可以之後到月曆的${monthName}禮物中再次查看。`,
+        });
+      } catch (err) {
+        console.warn("Failed to send monthly bouquet notification:", err);
+      }
+    };
+
+    void notifyMonthlyBouquet();
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoading, isNotificationEnabled, language, session]);
+
+  useEffect(() => {
+    if (isAuthLoading || !session || view !== "home") return undefined;
+
+    const period = previousMonthPeriod();
+    const storageKey = monthlyBouquetStorageKey(MONTHLY_BOUQUET_SEEN_PREFIX, session.user.id, period);
+    if (hasLocalFlag(storageKey)) return undefined;
+
+    let active = true;
+
+    const openMonthlyBouquet = async () => {
+      try {
+        const records = await getEmotionRecords();
+        const flowerIndexes = monthlyFlowerIndexes(
+          dailyFinalEmotionRecords(revealedEmotionRecords(records)),
+          period.year,
+          period.month,
+        );
+
+        if (!active || flowerIndexes.length === 0 || hasLocalFlag(storageKey)) return;
+
+        setHomeBouquetPeriod(period);
+        setHomeBouquetFlowerIndexes(flowerIndexes);
+        setIsHomeBouquetOpen(true);
+      } catch (err) {
+        console.warn("Failed to open monthly bouquet:", err);
+      }
+    };
+
+    void openMonthlyBouquet();
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoading, session, view]);
+
   const handleNotificationEnabledChange = async (enabled: boolean) => {
     if (!enabled) {
       setIsNotificationEnabled(false);
@@ -427,6 +542,14 @@ export default function App() {
     setActiveDate("");
   };
 
+  const closeHomeMonthlyBouquet = () => {
+    if (session && homeBouquetPeriod) {
+      setLocalFlag(monthlyBouquetStorageKey(MONTHLY_BOUQUET_SEEN_PREFIX, session.user.id, homeBouquetPeriod));
+    }
+
+    setIsHomeBouquetOpen(false);
+  };
+
   return (
     <div className={demoFrame.isFullscreen ? "demo-page demo-page--fullscreen" : "demo-page"}>
       <div
@@ -518,6 +641,14 @@ export default function App() {
             onClick={goBack}
             className="absolute left-[36px] top-[36px] size-[48px] rounded-full bg-transparent cursor-pointer z-50"
             aria-label="close"
+          />
+        )}
+        {isHomeBouquetOpen && homeBouquetFlowerIndexes.length > 0 && (
+          <MonthlyBouquetOverlay
+            flowerIndexes={homeBouquetFlowerIndexes}
+            language={language}
+            onClose={closeHomeMonthlyBouquet}
+            period={homeBouquetPeriod ?? previousMonthPeriod()}
           />
         )}
           </>

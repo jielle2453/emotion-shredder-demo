@@ -471,7 +471,7 @@ function SettingsModal({
   }[kind];
 
   return (
-    <div className="absolute inset-0 z-[80] flex items-center justify-center bg-white/60 px-[40px] backdrop-blur-[1px]">
+    <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/60 px-[40px] backdrop-blur-[1px]">
       <div className="relative w-[300px] rounded-[22px] border border-[#f3f3f3] bg-white px-[24px] py-[26px] shadow-[4px_4px_20px_5px_rgba(219,219,219,0.28)]">
         <p className="font-['Fredoka:SemiBold','Noto_Sans_JP:Regular',sans-serif] text-[#767676] text-[20px] leading-[1.3]">
           {content.title}

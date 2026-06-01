@@ -3,13 +3,13 @@ import svgPaths from "./svg-eyhspj0gv8";
 import { dailyFinalEmotionRecords, getEmotionRecords, recordsInMonth, revealedEmotionRecords, type StoredEmotionRecord } from "../../utils/records";
 import { FLOWERS, clampFlowerIndex } from "../../utils/flowers";
 import type { AppLanguage } from "../../utils/i18n";
+import { BouquetGiftButton, MonthlyBouquetOverlay, monthlyFlowerIndexes } from "../../app/components/MonthlyBouquet";
 import SwappingFlowerStrip from "../../app/components/SwappingFlowerStrip";
 
 const MONTH_NAMES_EN = ["JAN", "FEB", "MAR", "APR", "MAY", "JUNE", "JULY", "AUG", "SEPT", "OCT", "NOV", "DEC"];
 const MONTH_NAMES_ZH = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
 const COL_OFFSETS = [-129, -85.5, -42.5, 0.5, 44, 87, 130];
 const ROW_TOPS = [0, 96.22, 192.43, 288.65, 384.86, 481.08];
-
 type CalendarToday = {
   year: number;
   month: number;
@@ -293,6 +293,7 @@ export default function Component({
   const [year, setYear] = useState(today.year);
   const [month, setMonth] = useState(today.month);
   const [records, setRecords] = useState<StoredEmotionRecord[]>([]);
+  const [isBouquetOpen, setIsBouquetOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -312,6 +313,15 @@ export default function Component({
 
   const revealedDailyRecords = useMemo(() => dailyFinalEmotionRecords(revealedEmotionRecords(records)), [records]);
   const dayFlowers = useMemo(() => flowersByDay(revealedDailyRecords, year, month), [revealedDailyRecords, year, month]);
+  const bouquetFlowerIndexes = useMemo(
+    () => monthlyFlowerIndexes(revealedDailyRecords, year, month),
+    [revealedDailyRecords, year, month],
+  );
+  const isBouquetAvailable = bouquetFlowerIndexes.length > 0;
+
+  useEffect(() => {
+    if (!isBouquetAvailable) setIsBouquetOpen(false);
+  }, [isBouquetAvailable]);
 
   const prev = () => {
     if (month === 1) {
@@ -339,6 +349,7 @@ export default function Component({
         <Setting />
       </div>
       <SwappingFlowerStrip className="-translate-x-1/2 absolute bottom-[76px] h-[80px] left-1/2 w-[360px]" />
+      {isBouquetAvailable && <BouquetGiftButton onClick={() => setIsBouquetOpen(true)} />}
       <button onClick={prev} aria-label="prev month" className="absolute aspect-[16/16] flex items-center justify-center left-[9.95%] right-[86.07%] top-[96px] cursor-pointer bg-transparent" style={{ containerType: "size" }}>
         <div className="-rotate-90 -scale-x-100 flex-none h-[100cqw] w-[100cqh]">
           <div className="overflow-clip relative size-full" data-name="arrow">
@@ -361,6 +372,14 @@ export default function Component({
           </div>
         </div>
       </button>
+      {isBouquetOpen && isBouquetAvailable && (
+        <MonthlyBouquetOverlay
+          flowerIndexes={bouquetFlowerIndexes}
+          language={language}
+          onClose={() => setIsBouquetOpen(false)}
+          period={{ year, month }}
+        />
+      )}
     </div>
   );
 }
