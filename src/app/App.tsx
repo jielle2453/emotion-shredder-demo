@@ -127,6 +127,7 @@ export default function App() {
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
   const [language, setLanguage] = useState<AppLanguage>("zh");
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [homeBouquetFlowerIndexes, setHomeBouquetFlowerIndexes] = useState<number[]>([]);
   const [homeBouquetPeriod, setHomeBouquetPeriod] = useState<BouquetPeriod | null>(null);
   const [isHomeBouquetOpen, setIsHomeBouquetOpen] = useState(false);
@@ -224,11 +225,13 @@ export default function App() {
       setIsAuthLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
       setIsAuthLoading(false);
+      if (event === "PASSWORD_RECOVERY") setIsPasswordRecovery(true);
       if (nextSession) setIsGuestMode(false);
       if (!nextSession) {
+        setIsPasswordRecovery(false);
         setView("home");
         setHistory([]);
         setAnalysisData(null);
@@ -576,8 +579,15 @@ export default function App() {
             </p>
           </div>
         )}
-        {!isAuthLoading && !session && !isGuestMode && <AuthScreen language={language} onGuest={() => setIsGuestMode(true)} />}
-        {!isAuthLoading && (session || isGuestMode) && (
+        {!isAuthLoading && isPasswordRecovery && (
+          <AuthScreen
+            isPasswordRecovery
+            language={language}
+            onPasswordRecoveryComplete={() => setIsPasswordRecovery(false)}
+          />
+        )}
+        {!isAuthLoading && !isPasswordRecovery && !session && !isGuestMode && <AuthScreen language={language} onGuest={() => setIsGuestMode(true)} />}
+        {!isAuthLoading && !isPasswordRecovery && (session || isGuestMode) && (
           <>
         {view === "home" && (
           <Home

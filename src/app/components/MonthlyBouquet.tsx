@@ -32,9 +32,9 @@ const BOUQUET_CENTER_X = 201;
 const BOUQUET_FLOWER_Y_OFFSET = 144;
 const BOUQUET_SIZE_MULTIPLIER = 1.1;
 const SHARE_IMAGE_WIDTH = 1080;
-const SHARE_IMAGE_HEIGHT = 1080;
-const SHARE_SCENE_SCALE = 2.17;
-const SHARE_SCENE_TOP_MARGIN = 70;
+const SHARE_IMAGE_HEIGHT = 1920;
+const SHARE_SCENE_SCALE = 2.05;
+const SHARE_SCENE_CARD_TOP = 500;
 const MESSAGE_CARD_FRAME = { left: 18, top: 236, width: 174, height: 261 };
 const MESSAGE_CARD_TEXT = { centerX: 86, centerY: 104, width: 138, rotate: -13 };
 const GRADUATION_CAP_FRAME = { left: 248, top: 238, width: 130, height: 195 };
@@ -347,12 +347,47 @@ function bouquetFilename(period: BouquetPeriod, language: AppLanguage) {
     : `${bouquetMonthName(period, language)}花束.png`;
 }
 
+function bouquetSharePeriodLabel(period: BouquetPeriod) {
+  return `${period.year}/${String(period.month).padStart(2, "0")}`;
+}
+
+function drawBouquetShareBackground(context: CanvasRenderingContext2D) {
+  const gradient = context.createLinearGradient(0, 0, 0, SHARE_IMAGE_HEIGHT);
+  gradient.addColorStop(0, "#e9ded4");
+  gradient.addColorStop(0.5, "#c9bdb2");
+  gradient.addColorStop(1, "#9b8d80");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, SHARE_IMAGE_WIDTH, SHARE_IMAGE_HEIGHT);
+
+  const glow = context.createRadialGradient(470, 600, 120, 540, 700, 760);
+  glow.addColorStop(0, "rgba(255, 250, 245, 0.24)");
+  glow.addColorStop(0.55, "rgba(255, 250, 245, 0.08)");
+  glow.addColorStop(1, "rgba(255, 250, 245, 0)");
+  context.fillStyle = glow;
+  context.fillRect(0, 0, SHARE_IMAGE_WIDTH, SHARE_IMAGE_HEIGHT);
+}
+
+function drawBouquetShareFooter(context: CanvasRenderingContext2D, period: BouquetPeriod) {
+  context.save();
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillStyle = "rgba(255, 255, 255, 0.9)";
+  context.shadowColor = "rgba(70, 58, 48, 0.18)";
+  context.shadowBlur = 14;
+  context.font = '300 58px "ChenYuluoyan 2.0 Thin", "Noto Sans TC", sans-serif';
+  context.fillText("情緒碎紙機", SHARE_IMAGE_WIDTH / 2, 1628);
+  context.font = '300 36px "ChenYuluoyan 2.0 Thin", "Noto Sans TC", sans-serif';
+  context.fillText(bouquetSharePeriodLabel(period), SHARE_IMAGE_WIDTH / 2, 1704);
+  context.restore();
+}
+
 async function createBouquetShareBlob(flowerIndexes: number[], period: BouquetPeriod, language: AppLanguage) {
   const canvas = document.createElement("canvas");
   canvas.width = SHARE_IMAGE_WIDTH;
   canvas.height = SHARE_IMAGE_HEIGHT;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is not available");
+  if ("fonts" in document) await document.fonts.ready;
 
   const [backImage, frontImage, cardImage, capImage, ...flowerImages] = await Promise.all([
     loadImage(bouquetBack),
@@ -364,11 +399,11 @@ async function createBouquetShareBlob(flowerIndexes: number[], period: BouquetPe
   const layout = bouquetFlowerLayout(flowerIndexes);
   const cardMessage = bouquetCardMessage(flowerIndexes, period, language);
 
-  context.clearRect(0, 0, SHARE_IMAGE_WIDTH, SHARE_IMAGE_HEIGHT);
+  drawBouquetShareBackground(context);
 
   const sceneScale = SHARE_SCENE_SCALE;
   const sceneOriginX = SHARE_IMAGE_WIDTH / 2 - 201 * sceneScale;
-  const sceneOriginY = SHARE_SCENE_TOP_MARGIN - MESSAGE_CARD_FRAME.top * sceneScale;
+  const sceneOriginY = SHARE_SCENE_CARD_TOP - MESSAGE_CARD_FRAME.top * sceneScale;
   drawContainImage(context, backImage, sceneOriginX, sceneOriginY + 318 * sceneScale, 402 * sceneScale, 360 * sceneScale);
   drawMessageCard(context, cardImage, cardMessage, sceneOriginX, sceneOriginY, sceneScale, language);
   drawGraduationCap(context, capImage, sceneOriginX, sceneOriginY, sceneScale);
@@ -385,6 +420,7 @@ async function createBouquetShareBlob(flowerIndexes: number[], period: BouquetPe
   context.restore();
 
   drawContainImage(context, frontImage, sceneOriginX, sceneOriginY + 318 * sceneScale, 402 * sceneScale, 360 * sceneScale);
+  drawBouquetShareFooter(context, period);
 
   return canvasToBlob(canvas);
 }
