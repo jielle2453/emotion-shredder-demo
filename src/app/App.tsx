@@ -259,29 +259,59 @@ export default function App() {
       return undefined;
     }
 
-    const removeStartListeners = () => {
-      window.removeEventListener("pointerdown", startBackgroundMusic);
-      window.removeEventListener("keydown", startBackgroundMusic);
-    };
-
     const startBackgroundMusic = () => {
-      if (!isSoundEnabled || (hasStartedBackgroundAudioRef.current && !audio.paused)) return;
+      if (!isSoundEnabled || document.hidden || (hasStartedBackgroundAudioRef.current && !audio.paused)) return;
 
+      const hadStarted = hasStartedBackgroundAudioRef.current;
       audio.play()
         .then(() => {
           hasStartedBackgroundAudioRef.current = true;
           removeStartListeners();
         })
         .catch(() => {
-          hasStartedBackgroundAudioRef.current = false;
+          if (!hadStarted) hasStartedBackgroundAudioRef.current = false;
         });
+    };
+
+    const removeStartListeners = () => {
+      window.removeEventListener("pointerdown", startBackgroundMusic);
+      window.removeEventListener("keydown", startBackgroundMusic);
+    };
+
+    const pauseBackgroundMusic = () => {
+      audio.pause();
+    };
+
+    const resumeBackgroundMusic = () => {
+      if (!document.hidden && hasStartedBackgroundAudioRef.current) startBackgroundMusic();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) pauseBackgroundMusic();
+      else resumeBackgroundMusic();
+    };
+
+    const removeLifecycleListeners = () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", pauseBackgroundMusic);
+      window.removeEventListener("focus", resumeBackgroundMusic);
+      window.removeEventListener("pagehide", pauseBackgroundMusic);
+      window.removeEventListener("pageshow", resumeBackgroundMusic);
     };
 
     window.addEventListener("pointerdown", startBackgroundMusic);
     window.addEventListener("keydown", startBackgroundMusic);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", pauseBackgroundMusic);
+    window.addEventListener("focus", resumeBackgroundMusic);
+    window.addEventListener("pagehide", pauseBackgroundMusic);
+    window.addEventListener("pageshow", resumeBackgroundMusic);
     if (hasStartedBackgroundAudioRef.current) startBackgroundMusic();
 
-    return removeStartListeners;
+    return () => {
+      removeStartListeners();
+      removeLifecycleListeners();
+    };
   }, [isAuthLoading, isSoundEnabled]);
 
   useEffect(() => {
